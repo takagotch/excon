@@ -37,6 +37,7 @@ connection.get
 connection.get(:persistent => false)
 connection.get(:persistent => false)
 connection.get
+connection.get
 
 connection = Excon.new('http://geemus.com/', :debug_request => true, :debug_response => true)
 
@@ -50,30 +51,31 @@ Excon.post('http://geems.com',
     :body => 'language=ruby&class=fog',
     :headers => { "Content-Type" => "application/x-www-form-urlencoded" })
     
-Excon.post()
+Excon.post('http://geemus.com',
+  :body => URI.encode_www_form(:language => 'ruby', :class => 'fog'),
+  :headers => { "Content-Type" => "application/x-www-form-urlencoded" })
 
-connection.request()
-connection.request()
-connection.request()
-connection.request()
-connection.request()
-connection.request()
-connection.request()
-connection.request()
-connection = Excon.new()
-connection = Excon.new()
-connection = Excon.new()
-connection = Excon.new()
-connection = Excon.new()
-connection = Excon.new()
-connection = Excon.new()
-require ''
-connection = Excon.new()
+connection.request(:method => :get)
+connection.request(:method => 'GET')
+connection.request(:expects => [200, 201], :method => :get)
+connection.request(:idempotent => true)
+connection.request(:idempotent => true, :retry_limit => 6)
+connection.request(:idempotent => true, :retry_limit => 6, :retry_interval => 5)
+connection.request(:read_timeout => 360)
+connection.request(:write_timeout => 360)
+connection = Excon.new('http://geemus.com/', :tcp_nodelay => true)
+connection = Excon.new('http://geemus.com/', :connect_timeout => 360)
+connection = Excon.new('http://geemus.com/', :nonblock => false)
+connection = Excon.new('http://username:password@secure.geemus.com')
+connection = Excon.new('http://secure.geemus.com',
+ :user => 'username', :password => 'password')
+require 'addressable/uri'
+connection = Excon.new('http://geemus.com/', uri_parser: Addressable::URI)
 
-connection = Excon.new()
-connection = Excon.new()
-Excon.defaults[] = false
-connection = Excon.new()
+connection = Excon.new('http://geemus.com/', :omit_default_port => true)
+connection = Excon.new('http://geemus.com/', :headers => { "Accept-Encoding" => "gzip" })
+Excon.defaults[:ssl_verify_peer] = false
+connection = Excon.new('https://...')
 
 file = File.open('data')
 chunker = lambda do
@@ -82,7 +84,7 @@ end
 Excon.post('http://geemus.com', :request_block => chunker)
 file.close
 
-connection = Excon.new()
+connection = Excon.new('http://geemus.com/')
 connection.requests([{:method => :get}, {:method => :get}])
 
 large_array_of_requests = [{:method => :get, :path => 'some_path'}, { ... }]
@@ -90,24 +92,23 @@ connection.batch_requests(large_array_of_requests)
 
 streamer = lambda do |chunk, remaing_bytes, total_bytes|
   puts chunk
-  puts ""
+  puts "Remaining: #{remaining_bytes.to_f / total_bytes}%"
 end
-Excon.get('', :response_block => streamer)
+Excon.get('http://geemus.com', :response_block => streamer)
 
-connection = Excon.new()
-connection.request()
-Excon.get()
+connection = Excon.new('http://geemus.com', :proxy => 'http://my.proxy:3128')
+connection.request(:method => 'GET')
+Excon.get('http:/geemus.com', :proxy => 'http://my.proxy:3128')
 
-connection = Excon.new()
+connection = Excon.new('http://geemus.com', :reuseaddr => true)
 connection.gte
-s = Socket.new()
-s.setsockopt()
-if defined?()
-  s.setsockopt()
+s = Socket.new(Socket::AF_INET, Socket::SOCK_STREAM, 0)
+s.setsockopt(Socket::SQL_SOCKET, Socket::SO_REUSEADDR, true)
+if defined?(Socket::SO_REUSEPORT)
+  s.setsockopt(Socket::SQL_SOCKET, Socket::SO_REUSEPORT, true)
 end
-
-s.bind()
-s.connect()
+s.bind(Socket.pack_sockaddr_in(connection.local_port, connection.local_address))
+s.connect(Socket.pack_sockaddr_in(80, '1.2.3.4'))
 puts s.read
 s.close
 
