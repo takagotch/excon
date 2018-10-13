@@ -112,12 +112,12 @@ s.connect(Socket.pack_sockaddr_in(80, '1.2.3.4'))
 puts s.read
 s.close
 
-connection = Excon.new()
-connection.request()
-Excon.get()
+connection = Excon.new('unix:///', :socket => '/tmp/unicorn.sock')
+connection.request(:method => :get, :path => '/ping')
+Excon.get('unix:///ping', :socket => '/tmp/unicorn.sock')
 
-connection = Excon.new()
-connection.request()
+connection = Excon.new('http://example.com', :mock => true)
+connection.request(:method => :get, :path => 'example', :mock => true)
 
 Excon.stub({}, {:body => 'body', :status => 200})
 Excon.stub({}, lambda (|request_params| {:body => request_params[:body], :status => 200}))
@@ -136,27 +136,46 @@ config.before(:all) do
   Excon.stub({}, {:body => 'Fallback', :status => 200})
 end
 
-connection = Excon.new()
+connection = Excon.new(
+  'http://geemus.com',
+  :instrumentor => ActiveSupport::Notifications
+)
 
-ActiveSupport::Notifications.subscribe() do |*args|
+ActiveSupport::Notifications.subscribe(/excon/) do |*args|
   puts "Excon did stuff!"
 end
 
-connection = Excon.new()
+connection = Excon.new(
+  'http://geemus.com',
+  :instrumentor => ActiveSupport::Notifications,
+  :instrumentor_name => 'my_app'
+)
 
 class ExconToRailsInstrumentor
+  def self.instrument(name, datum, &block)
+    namespace, *event = name.split(".")
+    rails_name = [event, namespace].flatten.join(".")
+    ActiveSupport::Notifications.instrument(rails_name, datum, &block)
+  end
 end
 
 class SimpleInstrumentor
+  class << self
+    attr_accessor :events
+    def instrument(name, params = {}, &block)
+      puts "#{name} just happened."
+      yield if block_given?
+    end
+  end
 end
 
 connection = Excon.new('http://example.com',
-                       client_cert: '',
-                       client_key: '',
-                       client_key_pass: '')
+                       client_cert: 'mycert.pem',
+                       client_key: 'mycert.key',
+                       client_key_pass: 'my pass phrase')
                        
-client_cert_data = File.load ''
-client_key_data = File.load ''
+client_cert_data = File.load 'mycert.pem'
+client_key_data = File.load 'mycert.key'
 
 connection = Excon.new('https://example.com',
                        client_cert_data: client_cert_data,
